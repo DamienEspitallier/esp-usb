@@ -30,7 +30,9 @@ typedef struct {
  */
 typedef enum {
     TINYUSB_MSC_EVENT_MOUNT_CHANGED,        /*!< Event type AFTER mount/unmount operation is successfully finished */
-    TINYUSB_MSC_EVENT_PREMOUNT_CHANGED      /*!< Event type BEFORE mount/unmount operation is started */
+    TINYUSB_MSC_EVENT_PREMOUNT_CHANGED,     /*!< Event type BEFORE mount/unmount operation is started */
+    TINYUSB_MSC_EVENT_TUD_MOUNT,            /*!< Event type when TUD mount is called */
+    TINYUSB_MSC_EVENT_TUD_UNMOUNT,          /*!< Event type when TUD unmount is called */
 } tinyusb_msc_event_type_t;
 
 /**
@@ -59,6 +61,8 @@ typedef struct {
     sdmmc_card_t *card;                             /*!< Pointer to sdmmc card configuration structure */
     tusb_msc_callback_t callback_mount_changed;     /*!< Pointer to the function callback that will be delivered AFTER mount/unmount operation is successfully finished */
     tusb_msc_callback_t callback_premount_changed;  /*!< Pointer to the function callback that will be delivered BEFORE mount/unmount operation is started */
+    tusb_msc_callback_t callback_tud_mount;         /*!< Pointer to the function callback that will be delivered when TUD mount is called */
+    tusb_msc_callback_t callback_tud_unmount;       /*!< Pointer to the function callback that will be delivered when TUD unmount is called */
     const esp_vfs_fat_mount_config_t mount_config; /*!< FATFS mount config */
 } tinyusb_msc_sdmmc_config_t;
 #endif
@@ -73,6 +77,8 @@ typedef struct {
     wl_handle_t wl_handle;                          /*!< Pointer to spiflash wera-levelling handle */
     tusb_msc_callback_t callback_mount_changed;     /*!< Pointer to the function callback that will be delivered AFTER mount/unmount operation is successfully finished */
     tusb_msc_callback_t callback_premount_changed;  /*!< Pointer to the function callback that will be delivered BEFORE mount/unmount operation is started */
+    tusb_msc_callback_t callback_tud_mount;         /*!< Pointer to the function callback that will be delivered when TUD mount is called */
+    tusb_msc_callback_t callback_tud_unmount;       /*!< Pointer to the function callback that will be delivered when TUD unmount is called */
     const esp_vfs_fat_mount_config_t mount_config; /*!< FATFS mount config */
 } tinyusb_msc_spiflash_config_t;
 

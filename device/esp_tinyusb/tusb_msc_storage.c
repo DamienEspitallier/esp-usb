@@ -41,6 +41,8 @@ typedef struct {
     esp_err_t (*write)(size_t sector_size, size_t addr, uint32_t lba, uint32_t offset, size_t size, const void *src);
     tusb_msc_callback_t callback_mount_changed;
     tusb_msc_callback_t callback_premount_changed;
+    tusb_msc_callback_t callback_tud_mount;
+    tusb_msc_callback_t callback_tud_unmount;
     int max_files;
 } tinyusb_msc_storage_handle_s; /*!< MSC object */
 
@@ -404,6 +406,16 @@ esp_err_t tinyusb_msc_storage_init_spiflash(const tinyusb_msc_spiflash_config_t 
     } else {
         tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_PREMOUNT_CHANGED);
     }
+    if (config->callback_tud_mount) {
+        tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_TUD_MOUNT, config->callback_tud_mount);
+    } else {
+        tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_TUD_MOUNT);
+    }
+    if (config->callback_tud_unmount) {
+        tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_TUD_UNMOUNT, config->callback_tud_unmount);
+    } else {
+        tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_TUD_UNMOUNT);
+    }
 
     return ESP_OK;
 }
@@ -440,6 +452,16 @@ esp_err_t tinyusb_msc_storage_init_sdmmc(const tinyusb_msc_sdmmc_config_t *confi
     } else {
         tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_PREMOUNT_CHANGED);
     }
+    if (config->callback_tud_mount) {
+        tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_TUD_MOUNT, config->callback_tud_mount);
+    } else {
+        tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_TUD_MOUNT);
+    }
+    if (config->callback_tud_unmount) {
+        tinyusb_msc_register_callback(TINYUSB_MSC_EVENT_TUD_UNMOUNT, config->callback_tud_unmount);
+    } else {
+        tinyusb_msc_unregister_callback(TINYUSB_MSC_EVENT_TUD_UNMOUNT);
+    }
 
     return ESP_OK;
 }
@@ -463,6 +485,12 @@ esp_err_t tinyusb_msc_register_callback(tinyusb_msc_event_type_t event_type,
     case TINYUSB_MSC_EVENT_PREMOUNT_CHANGED:
         s_storage_handle->callback_premount_changed = callback;
         return ESP_OK;
+    case TINYUSB_MSC_EVENT_TUD_MOUNT:
+        s_storage_handle->callback_tud_mount = callback;
+        return ESP_OK;
+    case TINYUSB_MSC_EVENT_TUD_UNMOUNT:
+        s_storage_handle->callback_tud_unmount = callback;
+        return ESP_OK;
     default:
         ESP_LOGE(TAG, "Wrong event type");
         return ESP_ERR_INVALID_ARG;
@@ -478,6 +506,12 @@ esp_err_t tinyusb_msc_unregister_callback(tinyusb_msc_event_type_t event_type)
         return ESP_OK;
     case TINYUSB_MSC_EVENT_PREMOUNT_CHANGED:
         s_storage_handle->callback_premount_changed = NULL;
+        return ESP_OK;
+    case TINYUSB_MSC_EVENT_TUD_MOUNT:
+        s_storage_handle->callback_tud_mount = NULL;
+        return ESP_OK;
+    case TINYUSB_MSC_EVENT_TUD_UNMOUNT:
+        s_storage_handle->callback_tud_unmount = NULL;
         return ESP_OK;
     default:
         ESP_LOGE(TAG, "Wrong event type");
@@ -627,14 +661,24 @@ int32_t tud_msc_scsi_cb(uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, u
 // Invoked when device is unmounted
 void tud_umount_cb(void)
 {
-    if (tinyusb_msc_storage_mount(s_storage_handle->base_path) != ESP_OK) {
-        ESP_LOGW(TAG, "tud_umount_cb() mount Fails");
+    tusb_msc_callback_t cb = s_storage_handle->callback_tud_unmount;
+    if (cb) {
+        tinyusb_msc_event_t event = {
+            .type = TINYUSB_MSC_EVENT_TUD_UNMOUNT,
+        };
+        cb(&event);
     }
 }
 
 // Invoked when device is mounted (configured)
 void tud_mount_cb(void)
 {
-    tinyusb_msc_storage_unmount();
+    tusb_msc_callback_t cb = s_storage_handle->callback_tud_mount;
+    if (cb) {
+        tinyusb_msc_event_t event = {
+            .type = TINYUSB_MSC_EVENT_TUD_MOUNT,
+        };
+        cb(&event);
+    }
 }
 /*********************************************************************** TinyUSB MSC callbacks*/
